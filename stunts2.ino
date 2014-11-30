@@ -1,10 +1,4 @@
-/* LedStripRainbow: Example Arduino sketch that shows
- * how to make a moving rainbow pattern on an
- * Addressable RGB LED Strip from Pololu.
- *
- * To use this, you will need to plug an Addressable RGB LED
- * strip from Pololu into pin 12.  After uploading the sketch,
- * you should see a moving rainbow.
+/* Stunts
  */
  
 #include <PololuLedStrip.h>
@@ -15,6 +9,7 @@ PololuLedStrip<12> ledStrip;
 // Create a buffer for holding the colors (3 bytes per color).
 #define LED_COUNT 60
 #define STUNT 3
+#define STUNTLEN 1
 rgb_color colors[LED_COUNT];
 rgb_color stunt[STUNT];
 uint16_t stuntloc[STUNT];
@@ -24,6 +19,7 @@ void setup()
 {
     pinMode(13, OUTPUT);
     randomSeed(analogRead(0));
+    startOneStunt(0);
 }
 
 // Converts a color from HSV to RGB.
@@ -48,32 +44,35 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
     return (rgb_color){r, g, b};
 }
 
+void startOneStunt(uint16_t i){
+  stunt[i]=hsvToRgb(random(360),255,255);
+  stuntdir[i]=1;//random(0,1)*2-1;
+  stuntloc[i]+=1;
+}
+
 void loop()
 {
+  for(uint16_t i = 0; i < LED_COUNT; i++)
+  {
+    colors[i] = (rgb_color){0,0,0};
+  }
   for(uint16_t i=0; i<STUNT; i++)
   {
     if(stuntloc[i]==0 && random(0,100)==i)
        {
-          if (i==0) { digitalWrite(13, HIGH); }   // turn the LED on (HIGH is the voltage level)
-          stunt[i]=hsvToRgb(random(256),255,255);
-          stuntdir[i]=random(0,1)*2-1;
-          stuntloc[i]+=1;
+          startOneStunt(i);
        }
      else if(stuntloc[i]!=0)
        {
-          stuntloc[i]=(stuntloc[i]+1)%LED_COUNT;
+          stuntloc[i]=max(0,LED_COUNT+stuntloc[i]+stuntdir[i])%LED_COUNT;
+          for(uint16_t j=max(stuntloc[i]-STUNTLEN,0); j<stuntloc[i]; j++)
+          {
+              colors[j]=stunt[i];
+          }
        }
   }
-  // Update the colors.
-  uint16_t time = millis() >> 2;
-  for(uint16_t i = 0; i < LED_COUNT; i++)
-  {
-    byte x = (time >> 2) - (i << 3);
-    colors[i] = hsvToRgb((uint32_t)x * 359 / 256, 255, 255);
-  }
-  
   // Write the colors to the LED strip.
   ledStrip.write(colors, LED_COUNT);  
   
-  delay(10);
+  delay(100);
 }
