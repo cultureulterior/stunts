@@ -4,12 +4,12 @@
 #include <PololuLedStrip.h>
 
 // Create an ledStrip object and specify the pin it will use.
-PololuLedStrip<12> ledStrip;
+PololuLedStrip<10> ledStrip;
 
 // Create a buffer for holding the colors (3 bytes per color).
-#define LED_COUNT 60
+#define LED_COUNT 252
 #define STUNT 3
-#define STUNTLEN 1
+#define STUNTLEN 2
 rgb_color colors[LED_COUNT];
 rgb_color stunt[STUNT];
 uint16_t stuntloc[STUNT];
@@ -46,8 +46,13 @@ rgb_color hsvToRgb(uint16_t h, uint8_t s, uint8_t v)
 
 void startOneStunt(uint16_t i){
   stunt[i]=hsvToRgb(random(360),255,255);
-  stuntdir[i]=1;//random(0,1)*2-1;
-  stuntloc[i]+=1;
+  if(random(2)==1) { 
+    stuntdir[i]=1; 
+    stuntloc[i] = 1;
+  } else { 
+    stuntdir[i]=-1; 
+    stuntloc[i] = LED_COUNT-1;
+  }
 }
 
 void loop()
@@ -62,9 +67,9 @@ void loop()
        {
           startOneStunt(i);
        }
-     else if(stuntloc[i]!=0)
+    else if(stuntloc[i]!=0)
        {
-          stuntloc[i]=max(0,LED_COUNT+stuntloc[i]+stuntdir[i])%LED_COUNT;
+          stuntloc[i]=max(0,stuntloc[i]+stuntdir[i])%LED_COUNT;
           for(uint16_t j=max(stuntloc[i]-STUNTLEN,0); j<stuntloc[i]; j++)
           {
               colors[j]=stunt[i];
@@ -74,5 +79,5 @@ void loop()
   // Write the colors to the LED strip.
   ledStrip.write(colors, LED_COUNT);  
   
-  delay(100);
+  delay(12);
 }
